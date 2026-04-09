@@ -830,7 +830,10 @@ pub struct ScreenshotBuilder {
 
 impl ScreenshotBuilder {
     pub(crate) fn new(inner: Weak<Impl>) -> Self {
-        let args = ScreenshotArgs::default();
+        let args = ScreenshotArgs {
+            timeout: Some(30000.0),
+            ..Default::default()
+        };
         Self { inner, args }
     }
 
