@@ -6,6 +6,22 @@ use crate::imp::{
     utils::{BrowserChannel, ColorScheme, Geolocation, HttpCredentials, ProxySettings, Viewport},
 };
 
+fn serialize_env_as_array<S: serde::Serializer>(
+    env: &Option<Map<String, Value>>,
+    s: S,
+) -> Result<S::Ok, S::Error> {
+    match env {
+        None => s.serialize_none(),
+        Some(map) => {
+            let entries: Vec<_> = map
+                .iter()
+                .map(|(k, v)| serde_json::json!({"name": k, "value": v}))
+                .collect();
+            s.serialize_some(&entries)
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct BrowserType {
     channel: ChannelOwner,
@@ -89,7 +105,6 @@ impl BrowserType {
 }
 
 #[skip_serializing_none]
-#[skip_serializing_none]
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LaunchArgs<'a, 'b, 'c> {
@@ -110,6 +125,7 @@ pub(crate) struct LaunchArgs<'a, 'b, 'c> {
     pub(crate) downloads: Option<&'c Path>,
     #[serde(rename = "slowMo")]
     pub(crate) slowmo: Option<f64>,
+    #[serde(serialize_with = "serialize_env_as_array")]
     pub(crate) env: Option<Map<String, Value>>,
     pub(crate) headless: Option<bool>,
     pub(crate) chromium_sandbox: Option<bool>,
@@ -176,6 +192,7 @@ pub(crate) struct LaunchPersistentContextArgs<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i
     #[serde(rename = "handleSIGHUP")]
     pub(crate) handle_sighup: Option<bool>,
     pub(crate) timeout: Option<f64>,
+    #[serde(serialize_with = "serialize_env_as_array")]
     pub(crate) env: Option<Map<String, Value>>,
     pub(crate) headless: Option<bool>,
     pub(crate) devtools: Option<bool>,
