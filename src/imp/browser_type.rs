@@ -46,8 +46,12 @@ impl BrowserType {
         args: LaunchPersistentContextArgs<'_, '_, '_, '_, '_, '_, '_, '_, '_, '_, '_>,
     ) -> Result<Weak<BrowserContext>, Arc<Error>> {
         let res = send_message!(self, "launchPersistentContext", args);
-        let guid = only_guid(&res)?;
-        let b = get_object!(self.context()?.lock().unwrap(), guid, BrowserContext)?;
+        #[derive(Deserialize)]
+        struct Response {
+            context: OnlyGuid,
+        }
+        let Response { context } = serde_json::from_value((*res).clone()).map_err(Error::Serde)?;
+        let b = get_object!(self.context()?.lock().unwrap(), &context.guid, BrowserContext)?;
         Ok(b)
     }
 
