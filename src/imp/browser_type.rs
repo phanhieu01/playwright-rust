@@ -204,6 +204,7 @@ pub(crate) struct LaunchPersistentContextArgs<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i
 
     pub(crate) viewport: Option<Option<Viewport>>,
     pub(crate) screen: Option<Viewport>,
+    #[serde(rename = "noDefaultViewport")]
     pub(crate) no_viewport: Option<bool>,
     #[serde(rename = "ignoreHTTPSErrors")]
     pub(crate) ignore_https_errors: Option<bool>,

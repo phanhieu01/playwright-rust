@@ -115,6 +115,7 @@ pub(crate) struct NewContextArgs<'e, 'f, 'g, 'h, 'i, 'j, 'k> {
 
     pub(crate) viewport: Option<Option<Viewport>>,
     pub(crate) screen: Option<Viewport>,
+    #[serde(rename = "noDefaultViewport")]
     pub(crate) no_viewport: Option<bool>,
     #[serde(rename = "ignoreHTTPSErrors")]
     pub(crate) ignore_https_errors: Option<bool>,
