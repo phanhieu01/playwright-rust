@@ -11,11 +11,11 @@ use crate::imp::{
     response::Response,
     utils::{
         ColorScheme, DocumentLoadState, FloatRect, Header, Length, MouseButton, PdfMargins,
-        ScreenshotType, Viewport
+        ScreenshotType, Viewport,
     },
     video::Video,
     websocket::WebSocket,
-    worker::Worker
+    worker::Worker,
 };
 
 #[derive(Debug)]
@@ -24,7 +24,7 @@ pub(crate) struct Page {
     main_frame: Weak<Frame>,
     browser_context: Weak<BrowserContext>,
     var: Mutex<Variable>,
-    tx: Mutex<Option<broadcast::Sender<Evt>>>
+    tx: Mutex<Option<broadcast::Sender<Evt>>>,
 }
 
 #[derive(Debug, Default)]
@@ -34,19 +34,19 @@ pub(crate) struct Variable {
     timeout: Option<u32>,
     navigation_timeout: Option<u32>,
     workers: Vec<Weak<Worker>>,
-    video: Option<Video>
+    video: Option<Video>,
 }
 
 macro_rules! navigation {
     ($f: ident, $m: literal) => {
         pub(crate) async fn $f(
             &self,
-            args: ReloadArgs
+            args: ReloadArgs,
         ) -> Result<Option<Weak<Response>>, Arc<Error>> {
             let v = send_message!(self, $m, args);
             let guid = match as_only_guid(&v) {
                 Some(g) => g,
-                None => return Ok(None)
+                None => return Ok(None),
             };
             let r = get_object!(self.context()?.lock().unwrap(), &guid, Response)?;
             Ok(Some(r))
@@ -59,18 +59,18 @@ macro_rules! mouse_down {
         pub(crate) async fn $f(
             &self,
             button: Option<MouseButton>,
-            click_count: Option<i32>
+            click_count: Option<i32>,
         ) -> Result<(), Arc<Error>> {
             #[skip_serializing_none]
             #[derive(Serialize)]
             #[serde(rename_all = "camelCase")]
             struct Args {
                 button: Option<MouseButton>,
-                click_count: Option<i32>
+                click_count: Option<i32>,
             }
             let args = Args {
                 button,
-                click_count
+                click_count,
             };
             let _ = send_message!(self, $m, args);
             Ok(())
@@ -84,11 +84,11 @@ impl Page {
     pub(crate) fn try_new(ctx: &Context, channel: ChannelOwner) -> Result<Self, Error> {
         let Initializer {
             main_frame: OnlyGuid { guid },
-            viewport
+            viewport,
         } = serde_json::from_value(channel.initializer.clone())?;
         let browser_context = match &channel.parent {
             Some(RemoteWeak::BrowserContext(c)) => c.clone(),
-            _ => return Err(Error::InvalidParams)
+            _ => return Err(Error::InvalidParams),
         };
         let main_frame = get_object!(ctx, &guid, Frame)?;
         let var = Mutex::new(Variable {
@@ -101,7 +101,7 @@ impl Page {
             main_frame,
             browser_context,
             var,
-            tx: Mutex::default()
+            tx: Mutex::default(),
         })
     }
 
@@ -110,9 +110,13 @@ impl Page {
         Ok(())
     }
 
-    pub(crate) fn browser_context(&self) -> Weak<BrowserContext> { self.browser_context.clone() }
+    pub(crate) fn browser_context(&self) -> Weak<BrowserContext> {
+        self.browser_context.clone()
+    }
 
-    pub(crate) fn main_frame(&self) -> Weak<Frame> { self.main_frame.clone() }
+    pub(crate) fn main_frame(&self) -> Weak<Frame> {
+        self.main_frame.clone()
+    }
 
     navigation! {reload, "reload"}
     navigation! {go_back, "goBack"}
@@ -145,10 +149,10 @@ impl Page {
         #[serde(rename_all = "camelCase")]
         struct Args<'b> {
             text: &'b str,
-            delay: Option<f64>
+            delay: Option<f64>,
         }
         let args = Args { text, delay };
-        let _ = send_message!(self, "keyboardInsertText", args);
+        let _ = send_message!(self, "keyboardType", args);
         Ok(())
     }
 
@@ -157,10 +161,10 @@ impl Page {
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
         struct Args<'b> {
-            text: &'b str,
-            delay: Option<f64>
+            key: &'b str,
+            delay: Option<f64>,
         }
-        let args = Args { text, delay };
+        let args = Args { key: text, delay };
         let _ = send_message!(self, "keyboardPress", args);
         Ok(())
     }
@@ -170,7 +174,7 @@ impl Page {
         #[serde(rename_all = "camelCase")]
         struct Args {
             x: f64,
-            y: f64
+            y: f64,
         }
         let args = Args { x, y };
         let _ = send_message!(self, "touchscreenTap", args);
@@ -181,7 +185,7 @@ impl Page {
         &self,
         x: f64,
         y: f64,
-        steps: Option<i32>
+        steps: Option<i32>,
     ) -> Result<(), Arc<Error>> {
         #[skip_serializing_none]
         #[derive(Serialize)]
@@ -189,7 +193,7 @@ impl Page {
         struct Args {
             x: f64,
             y: f64,
-            steps: Option<i32>
+            steps: Option<i32>,
         }
         let args = Args { x, y, steps };
         let _ = send_message!(self, "mouseMove", args);
@@ -214,12 +218,12 @@ impl Page {
 
     pub(crate) async fn accessibility_snapshot(
         &self,
-        args: AccessibilitySnapshotArgs
+        args: AccessibilitySnapshotArgs,
     ) -> ArcResult<Option<AccessibilitySnapshotResponse>> {
         let v = send_message!(self, "accessibilitySnapshot", args);
         let first = match first(&v) {
             None => return Ok(None),
-            Some(x) => x
+            Some(x) => x,
         };
         let res: AccessibilitySnapshotResponse =
             serde_json::from_value((*first).clone()).map_err(Error::Serde)?;
@@ -240,7 +244,7 @@ impl Page {
 
     pub(crate) async fn pdf(
         &self,
-        args: PdfArgs<'_, '_, '_, '_, '_, '_, '_, '_, '_, '_>
+        args: PdfArgs<'_, '_, '_, '_, '_, '_, '_, '_, '_, '_>,
     ) -> ArcResult<Vec<u8>> {
         let path = args.path.clone();
         let v = send_message!(self, "pdf", args);
@@ -255,7 +259,7 @@ impl Page {
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
         struct Args {
-            run_before_unload: Option<bool>
+            run_before_unload: Option<bool>,
         }
         let args = Args { run_before_unload };
         let _ = send_message!(self, "close", args);
@@ -280,7 +284,7 @@ impl Page {
         let v = send_message!(self, "opener", Map::new());
         let guid = match as_only_guid(&v) {
             Some(g) => g,
-            None => return Ok(None)
+            None => return Ok(None),
         };
         let p = get_object!(self.context()?.lock().unwrap(), guid, Page)?;
         Ok(Some(p))
@@ -288,15 +292,15 @@ impl Page {
 
     pub(crate) async fn set_extra_http_headers<T>(&self, headers: T) -> ArcResult<()>
     where
-        T: IntoIterator<Item = (String, String)>
+        T: IntoIterator<Item = (String, String)>,
     {
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
         struct Args {
-            headers: Vec<Header>
+            headers: Vec<Header>,
         }
         let args = Args {
-            headers: headers.into_iter().map(Header::from).collect()
+            headers: headers.into_iter().map(Header::from).collect(),
         };
         let _ = send_message!(self, "setExtraHTTPHeaders", args);
         Ok(())
@@ -313,17 +317,19 @@ impl Page {
         #[derive(Debug, Serialize)]
         #[serde(rename_all = "camelCase")]
         struct Args {
-            viewport_size: Viewport
+            viewport_size: Viewport,
         }
         let args = Args {
-            viewport_size: viewport_size.clone()
+            viewport_size: viewport_size.clone(),
         };
         let _ = send_message!(self, "setViewportSize", args);
         self.var.lock().unwrap().viewport = Some(viewport_size);
         Ok(())
     }
 
-    pub(crate) fn frames(&self) -> Vec<Weak<Frame>> { self.var.lock().unwrap().frames.clone() }
+    pub(crate) fn frames(&self) -> Vec<Weak<Frame>> {
+        self.var.lock().unwrap().frames.clone()
+    }
 
     pub(crate) fn default_timeout(&self) -> u32 {
         let this = self.var.lock().unwrap().timeout;
@@ -372,12 +378,14 @@ impl Page {
         Ok(())
     }
 
-    pub(crate) fn video(&self) -> Option<Video> { self.var.lock().unwrap().video.clone() }
+    pub(crate) fn video(&self) -> Option<Video> {
+        self.var.lock().unwrap().video.clone()
+    }
 
     fn on_close(&self, ctx: &Context) -> Result<(), Error> {
         let bc = match self.browser_context().upgrade() {
             None => return Ok(()),
-            Some(b) => b
+            Some(b) => b,
         };
         let this = get_object!(ctx, self.guid(), Page)?;
         bc.remove_page(&this);
@@ -412,12 +420,12 @@ impl Page {
         struct De {
             request: OnlyGuid,
             response_end_timing: f64,
-            failure_text: Option<String>
+            failure_text: Option<String>,
         }
         let De {
             request: OnlyGuid { guid },
             response_end_timing,
-            failure_text
+            failure_text,
         } = serde_json::from_value(params.into())?;
         let request = get_object!(ctx, &guid, Request)?;
         let req = upgrade(&request)?;
@@ -432,11 +440,11 @@ impl Page {
         #[serde(rename_all = "camelCase")]
         struct De {
             request: OnlyGuid,
-            response_end_timing: f64
+            response_end_timing: f64,
         }
         let De {
             request: OnlyGuid { guid },
-            response_end_timing
+            response_end_timing,
         } = serde_json::from_value(params.into())?;
         let request = get_object!(ctx, &guid, Request)?;
         let req = upgrade(&request)?;
@@ -445,9 +453,13 @@ impl Page {
         Ok(())
     }
 
-    pub(crate) fn workers(&self) -> Vec<Weak<Worker>> { self.var.lock().unwrap().workers.clone() }
+    pub(crate) fn workers(&self) -> Vec<Weak<Worker>> {
+        self.var.lock().unwrap().workers.clone()
+    }
 
-    fn push_worker(&self, worker: Weak<Worker>) { self.var.lock().unwrap().workers.push(worker); }
+    fn push_worker(&self, worker: Weak<Worker>) {
+        self.var.lock().unwrap().workers.push(worker);
+    }
 
     pub(crate) fn remove_worker(&self, worker: &Weak<Worker>) {
         let workers = &mut self.var.lock().unwrap().workers;
@@ -468,12 +480,12 @@ impl Page {
         struct De {
             url: String,
             suggested_filename: String,
-            artifact: OnlyGuid
+            artifact: OnlyGuid,
         }
         let De {
             url,
             suggested_filename,
-            artifact: OnlyGuid { guid }
+            artifact: OnlyGuid { guid },
         } = serde_json::from_value(params.into())?;
         let artifact = get_object!(ctx, &guid, Artifact)?;
         // TODO: set_is_remote
@@ -498,11 +510,11 @@ impl Page {
         #[serde(rename_all = "camelCase")]
         struct De {
             element: OnlyGuid,
-            is_multiple: bool
+            is_multiple: bool,
         }
         let De {
             element: OnlyGuid { guid },
-            is_multiple
+            is_multiple,
         } = serde_json::from_value(params.into())?;
         let element = get_object!(ctx, &guid, ElementHandle)?;
         let this = get_object!(ctx, self.guid(), Page)?;
@@ -513,14 +525,18 @@ impl Page {
 }
 
 impl RemoteObject for Page {
-    fn channel(&self) -> &ChannelOwner { &self.channel }
-    fn channel_mut(&mut self) -> &mut ChannelOwner { &mut self.channel }
+    fn channel(&self) -> &ChannelOwner {
+        &self.channel
+    }
+    fn channel_mut(&mut self) -> &mut ChannelOwner {
+        &mut self.channel
+    }
 
     fn handle_event(
         &self,
         ctx: &Context,
         method: Str<Method>,
-        params: Map<String, Value>
+        params: Map<String, Value>,
     ) -> Result<(), Error> {
         match method.as_str() {
             "close" => self.on_close(ctx)?,
@@ -608,13 +624,17 @@ pub(crate) enum Evt {
     Popup(Weak<Page>),
     WebSocket(Weak<WebSocket>),
     Worker(Weak<Worker>),
-    Video(Video)
+    Video(Video),
 }
 
 impl EventEmitter for Page {
     type Event = Evt;
-    fn tx(&self) -> Option<broadcast::Sender<Self::Event>> { self.tx.lock().unwrap().clone() }
-    fn set_tx(&self, tx: broadcast::Sender<Self::Event>) { *self.tx.lock().unwrap() = Some(tx); }
+    fn tx(&self) -> Option<broadcast::Sender<Self::Event>> {
+        self.tx.lock().unwrap().clone()
+    }
+    fn set_tx(&self, tx: broadcast::Sender<Self::Event>) {
+        *self.tx.lock().unwrap() = Some(tx);
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -638,7 +658,7 @@ pub enum EventType {
     Popup,
     WebSocket,
     Worker,
-    Video
+    Video,
 }
 
 impl IsEvent for Evt {
@@ -665,7 +685,7 @@ impl IsEvent for Evt {
             Self::Popup(_) => EventType::Popup,
             Self::WebSocket(_) => EventType::WebSocket,
             Self::Worker(_) => EventType::Worker,
-            Self::Video(_) => EventType::Video
+            Self::Video(_) => EventType::Video,
         }
     }
 }
@@ -675,7 +695,7 @@ impl IsEvent for Evt {
 struct Initializer {
     main_frame: OnlyGuid,
     #[serde(rename = "viewportSize")]
-    viewport: Option<Viewport>
+    viewport: Option<Viewport>,
 }
 
 #[skip_serializing_none]
@@ -686,7 +706,7 @@ pub(crate) struct MouseClickArgs {
     y: f64,
     pub(crate) delay: Option<f64>,
     pub(crate) button: Option<MouseButton>,
-    pub(crate) click_count: Option<i32>
+    pub(crate) click_count: Option<i32>,
 }
 
 impl MouseClickArgs {
@@ -696,7 +716,7 @@ impl MouseClickArgs {
             y,
             delay: None,
             button: None,
-            click_count: None
+            click_count: None,
         }
     }
 }
@@ -706,7 +726,7 @@ impl MouseClickArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AccessibilitySnapshotArgs {
     pub(crate) interesting_only: Option<bool>,
-    pub(crate) root: Option<OnlyGuid>
+    pub(crate) root: Option<OnlyGuid>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -738,18 +758,18 @@ pub struct AccessibilitySnapshotResponse {
     pub invalid: Option<String>,
     pub orientation: Option<String>,
     #[serde(default)]
-    pub children: Vec<AccessibilitySnapshotResponse>
+    pub children: Vec<AccessibilitySnapshotResponse>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum Val {
     String(String),
-    Number(f64)
+    Number(f64),
 }
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum Mixed {
     Mixed,
-    Bool(bool)
+    Bool(bool),
 }
 
 #[skip_serializing_none]
@@ -757,7 +777,7 @@ pub enum Mixed {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ReloadArgs {
     pub(crate) timeout: Option<f64>,
-    pub(crate) wait_until: Option<DocumentLoadState>
+    pub(crate) wait_until: Option<DocumentLoadState>,
 }
 
 #[skip_serializing_none]
@@ -777,7 +797,7 @@ pub(crate) struct PdfArgs<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j> {
     #[serde(rename = "preferCSSPageSize")]
     pub(crate) prefer_css_page_size: Option<bool>,
     pub(crate) margin: Option<PdfMargins<'g, 'h, 'i, 'j>>,
-    pub(crate) path: Option<PathBuf>
+    pub(crate) path: Option<PathBuf>,
 }
 
 #[skip_serializing_none]
@@ -790,7 +810,7 @@ pub(crate) struct ScreenshotArgs {
     pub(crate) omit_background: Option<bool>,
     pub(crate) full_page: Option<bool>,
     pub(crate) clip: Option<FloatRect>,
-    pub(crate) path: Option<PathBuf>
+    pub(crate) path: Option<PathBuf>,
 }
 
 #[skip_serializing_none]
@@ -798,7 +818,7 @@ pub(crate) struct ScreenshotArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct EmulateMediaArgs {
     pub(crate) media: Option<Media>,
-    pub(crate) color_scheme: Option<ColorScheme>
+    pub(crate) color_scheme: Option<ColorScheme>,
 }
 
 #[derive(Serialize)]
@@ -807,5 +827,5 @@ pub enum Media {
     /// Reset emulating
     Null,
     Print,
-    Screen
+    Screen,
 }
