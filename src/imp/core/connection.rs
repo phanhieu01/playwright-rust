@@ -78,8 +78,10 @@ pub(crate) type ArcResult<T> = Result<T, Arc<Error>>;
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        self.notify_closed(Error::ReceiverClosed);
         self.should_stop.store(true, Ordering::Relaxed);
+        let _ = self._child.kill();
+        let _ = self._child.wait();
+        self.notify_closed(Error::ReceiverClosed);
     }
 }
 
