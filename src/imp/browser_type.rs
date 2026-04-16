@@ -112,6 +112,7 @@ pub(crate) struct LaunchArgs<'a, 'b, 'c> {
     pub(crate) executable: Option<&'a Path>,
     pub(crate) args: Option<&'b [String]>,
     pub(crate) ignore_all_default_args: Option<bool>,
+    pub(crate) ignore_default_args: Option<Vec<String>>,
     #[serde(rename = "handleSIGINT")]
     pub(crate) handle_sigint: Option<bool>,
     #[serde(rename = "handleSIGTERM")]
@@ -139,6 +140,7 @@ impl<'a, 'b, 'c> Default for LaunchArgs<'a, 'b, 'c> {
             executable: None,
             args: None,
             ignore_all_default_args: None,
+            ignore_default_args: None,
             handle_sigint: None,
             handle_sigterm: None,
             handle_sighup: None,
@@ -185,6 +187,7 @@ pub(crate) struct LaunchPersistentContextArgs<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i
     pub(crate) executable: Option<&'b Path>,
     pub(crate) args: Option<&'c [String]>,
     pub(crate) ignore_all_default_args: Option<bool>,
+    pub(crate) ignore_default_args: Option<Vec<String>>,
     #[serde(rename = "handleSIGINT")]
     pub(crate) handle_sigint: Option<bool>,
     #[serde(rename = "handleSIGTERM")]
@@ -258,6 +261,7 @@ impl<'a> LaunchPersistentContextArgs<'a, '_, '_, '_, '_, '_, '_, '_, '_, '_, '_>
             executable: None,
             args: None,
             ignore_all_default_args: None,
+            ignore_default_args: None,
             handle_sigint: None,
             handle_sigterm: None,
             handle_sighup: None,

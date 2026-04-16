@@ -158,10 +158,12 @@ impl<'a, 'b, 'c> Launcher<'a, 'b, 'c> {
         /// Firefox user preferences. Learn more about the Firefox user preferences at
         /// [`about:config`](https://support.mozilla.org/en-US/kb/about-config-editor-firefox).
         firefox_user_prefs: Option<Map<String, Value>>,
-        channel: Option<BrowserChannel>
+        channel: Option<BrowserChannel>,
+        /// If `true`, Playwright does not pass its own configurations args and only uses
+        /// the ones from `args`. If an array is given, then filters out the given default
+        /// arguments. Dangerous option; use with care. Defaults to `false`.
+        ignore_default_args: Option<Vec<String>>
     }
-    //#[doc = "If `true`, Playwright does not pass its own configurations args and only uses the ones from `args`. If an array is\ngiven, then filters out the given default arguments. Dangerous option; use with care. Defaults to `false`."]
-    // ignore_default_args: Option<NotImplementedYet>,
     //#[doc = "Logger sink for Playwright logging."]
     // logger: Option<Logger>,
 }
@@ -285,10 +287,12 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k>
         /// specified, the HAR is not recorded. Make sure to await [`method: BrowserContext.close`] for the HAR to be saved.
         record_har: Option<RecordHar<'k>>,
 
-        channel: Option<BrowserChannel>
+        channel: Option<BrowserChannel>,
+
+        /// If `true`, Playwright does not pass its own configurations args and only uses
+        /// the ones from `args`. Dangerous option; use with care.
+        ignore_default_args: Option<Vec<String>>
     }
-    //#[doc = "If `true`, Playwright does not pass its own configurations args and only uses the ones from `args`. Dangerous option;\nuse with care."]
-    // ignore_default_args: Option<Vec<String>>,
     //#[doc = "Logger sink for Playwright logging."] logger: Option<Logger>,
     //#[doc = "Optional setting to control whether to omit request content from the HAR. Defaults to `false`."]
     // record_har_omit_content: Option<bool>,
