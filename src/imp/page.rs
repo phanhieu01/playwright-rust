@@ -200,6 +200,31 @@ impl Page {
         Ok(())
     }
 
+    pub(crate) async fn mouse_move_raw_batch(
+        &self,
+        points: &[(f64, f64)],
+    ) -> Result<(), Arc<Error>> {
+        if points.is_empty() {
+            return Ok(());
+        }
+        let method: Str<Method> = "mouseMove".to_owned().try_into().unwrap();
+        let requests: Vec<RequestBody> = points
+            .iter()
+            .map(|&(x, y)| {
+                let mut params = Map::new();
+                params.insert("x".into(), Value::from(x));
+                params.insert("y".into(), Value::from(y));
+                self.channel.create_request(method.clone()).set_params(params)
+            })
+            .collect();
+        let waits = self.channel.send_message_batch(requests).await.map_err(Arc::new)?;
+        let results: Vec<WaitMessageResult> = futures::future::join_all(waits).await;
+        for r in results {
+            r?.map_err(Error::ErrorResponded)?;
+        }
+        Ok(())
+    }
+
     mouse_down! {mouse_down, "mouseDown"}
     mouse_down! {mouse_up, "mouseUp"}
 

@@ -366,6 +366,31 @@ impl Context {
         self.writer.send(&req)?;
         Ok(())
     }
+
+    pub(in crate::imp::core) fn send_message_batch(
+        &mut self,
+        requests: Vec<RequestBody>,
+    ) -> Result<(), Error> {
+        for r in requests {
+            self.id += 1;
+            let RequestBody {
+                guid,
+                method,
+                params,
+                place,
+            } = r;
+            self.callbacks.insert(self.id, place);
+            let req = Req {
+                guid: &guid,
+                method: &method,
+                params,
+                id: self.id,
+                metadata: Map::new(),
+            };
+            self.writer.send(&req)?;
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

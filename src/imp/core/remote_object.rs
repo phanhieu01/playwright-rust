@@ -71,6 +71,23 @@ impl ChannelOwner {
         Ok(wait)
     }
 
+    pub(in crate::imp) async fn send_message_batch(
+        &self,
+        requests: Vec<RequestBody>,
+    ) -> Result<Vec<WaitData<WaitMessageResult>>, Error> {
+        let waits: Vec<WaitData<WaitMessageResult>> = (0..requests.len())
+            .map(|_| WaitData::new())
+            .collect();
+        let requests: Vec<RequestBody> = requests
+            .into_iter()
+            .zip(waits.iter())
+            .map(|(r, w)| r.set_wait(w))
+            .collect();
+        let ctx = upgrade(&self.ctx)?;
+        ctx.lock().unwrap().send_message_batch(requests)?;
+        Ok(waits)
+    }
+
     pub(crate) fn children(&self) -> Vec<RemoteWeak> { self.children.lock().unwrap().to_vec() }
 
     pub(crate) fn push_child(&self, c: RemoteWeak) {

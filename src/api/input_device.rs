@@ -152,6 +152,11 @@ impl Mouse {
         inner.mouse_move(x, y, steps).await
     }
 
+    pub async fn move_raw_batch(&self, points: &[(f64, f64)]) -> Result<(), Arc<Error>> {
+        let inner = upgrade(&self.inner)?;
+        inner.mouse_move_raw_batch(points).await
+    }
+
     pub async fn down(
         &self,
         button: Option<MouseButton>,
