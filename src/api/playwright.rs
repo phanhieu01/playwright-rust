@@ -16,10 +16,15 @@ pub struct Playwright {
 fn run(driver: &Driver, args: &'static [&'static str]) -> io::Result<()> {
     // For Playwright 1.50+, we run: node package/cli.js <args>
     let cli_script = driver.cli_script();
-    let status = Command::new(driver.executable())
-        .arg(&cli_script)
-        .args(args)
-        .status()?;
+    let mut cmd = Command::new(driver.executable());
+    cmd.arg(&cli_script).args(args);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    let status = cmd.status()?;
     if !status.success() {
         return Err(io::Error::new(
             io::ErrorKind::Other,

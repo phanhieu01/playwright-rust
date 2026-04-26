@@ -90,13 +90,19 @@ impl Connection {
         // For Playwright 1.50+, we run: node package/cli.js run-driver
         let executable = driver.executable();
         let cli_script = driver.cli_script();
-        let mut child = Command::new(&executable)
-            .arg(&cli_script)
+        let mut cmd = Command::new(&executable);
+        cmd.arg(&cli_script)
             .args(&["run-driver"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()?;
+            .stderr(Stdio::null());
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+        let mut child = cmd.spawn()?;
         // TODO: env "NODE_OPTIONS"
         let stdin = child.stdin.take().unwrap();
         let stdout = child.stdout.take().unwrap();
