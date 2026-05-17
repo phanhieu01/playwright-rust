@@ -475,8 +475,12 @@ impl Frame {
 
     pub(crate) async fn wait_for_function(
         &self,
-        args: WaitForFunctionArgs<'_>
+        mut args: WaitForFunctionArgs<'_>
     ) -> ArcResult<Weak<JsHandle>> {
+        if args.arg.is_none() {
+            args.arg =
+                Some(ser::to_value(&None::<()>).map_err(Error::SerializationPwJson)?);
+        }
         let v = send_message!(self, "waitForFunction", args);
         let guid = only_guid(&v)?;
         let h = get_object!(self.context()?.lock().unwrap(), guid, JsHandle)?;
