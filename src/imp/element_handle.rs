@@ -7,6 +7,7 @@ use crate::imp::{
         WaitForSelectorState
     }
 };
+use base64::prelude::*;
 
 #[derive(Debug)]
 pub(crate) struct ElementHandle {
@@ -204,7 +205,7 @@ impl ElementHandle {
         let path = args.path.clone();
         let v = send_message!(self, "screenshot", args);
         let b64 = only_str(&v)?;
-        let bytes = base64::decode(b64).map_err(Error::InvalidBase64)?;
+        let bytes = BASE64_STANDARD.decode(b64).map_err(Error::InvalidBase64)?;
         may_save(path.as_deref(), &bytes)?;
         Ok(bytes)
     }

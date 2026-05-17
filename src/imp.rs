@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub(crate) mod impl_future {
     pub use std::{future::Future, pin::Pin, task};
 }

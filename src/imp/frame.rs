@@ -646,7 +646,7 @@ impl<'a> ClickArgs<'a> {
             position: None,
             delay: None,
             button: None,
-            /// Is ignored if dblclick
+            // Is ignored if dblclick
             click_count: None,
             timeout: Some(30000.0),
             force: None,

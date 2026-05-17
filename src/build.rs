@@ -55,6 +55,7 @@ fn download(url: &str, dest: &Path) {
     }
 }
 
+#[allow(dead_code)]
 fn size(p: &Path) -> u64 {
     let maybe_metadata = p.metadata().ok();
     let size = maybe_metadata

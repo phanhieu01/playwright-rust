@@ -17,6 +17,7 @@ use crate::imp::{
     websocket::WebSocket,
     worker::Worker,
 };
+use base64::prelude::*;
 
 #[derive(Debug)]
 pub(crate) struct Page {
@@ -274,7 +275,7 @@ impl Page {
         let path = args.path.clone();
         let v = send_message!(self, "pdf", args);
         let b64 = only_str(&v)?;
-        let bytes = base64::decode(b64).map_err(Error::InvalidBase64)?;
+        let bytes = BASE64_STANDARD.decode(b64).map_err(Error::InvalidBase64)?;
         may_save(path.as_deref(), &bytes)?;
         Ok(bytes)
     }
@@ -295,7 +296,7 @@ impl Page {
         let path = args.path.clone();
         let v = send_message!(self, "screenshot", args);
         let b64 = only_str(&v)?;
-        let bytes = base64::decode(b64).map_err(Error::InvalidBase64)?;
+        let bytes = BASE64_STANDARD.decode(b64).map_err(Error::InvalidBase64)?;
         may_save(path.as_deref(), &bytes)?;
         Ok(bytes)
     }
@@ -543,8 +544,8 @@ impl Page {
         } = serde_json::from_value(params.into())?;
         let element = get_object!(ctx, &guid, ElementHandle)?;
         let this = get_object!(ctx, self.guid(), Page)?;
-        let file_chooser = FileChooser::new(this, element, is_multiple);
-        // self.emit_event(Evt::FileChooser(file_chooser));
+        let _file_chooser = FileChooser::new(this, element, is_multiple);
+        // self.emit_event(Evt::FileChooser(_file_chooser));
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 use crate::imp::{core::*, prelude::*};
+use base64::prelude::*;
 use std::{
     fs::File,
     io::{BufWriter, Write}
@@ -21,7 +22,7 @@ impl Stream {
             if b64.is_empty() {
                 break;
             } else {
-                let bytes = base64::decode(b64).map_err(Error::InvalidBase64)?;
+                let bytes = BASE64_STANDARD.decode(b64).map_err(Error::InvalidBase64)?;
                 writer.write(&bytes).map_err(Error::from)?;
             }
         }

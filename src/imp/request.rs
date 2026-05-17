@@ -5,6 +5,7 @@ use crate::imp::{
     response::Response,
     utils::{Header, ResponseTiming}
 };
+use base64::prelude::*;
 
 #[derive(Debug)]
 pub(crate) struct Request {
@@ -86,7 +87,7 @@ impl Request {
     pub(crate) fn frame(&self) -> Weak<Frame> { self.frame.clone() }
 
     pub(crate) fn post_data(&self) -> Option<Vec<u8>> {
-        base64::decode(self.post_data.as_ref()?).ok()
+        BASE64_STANDARD.decode(self.post_data.as_ref()?).ok()
     }
 
     pub(crate) fn post_data_as_string(&self) -> Option<String> {

@@ -1,4 +1,5 @@
 use crate::imp::{core::*, prelude::*};
+use base64::prelude::*;
 
 #[derive(Debug)]
 pub(crate) struct WebSocket {
@@ -51,7 +52,7 @@ fn parse_frame(params: Map<String, Value>) -> Result<Buffer, Error> {
     }
     let De { opcode, data } = serde_json::from_value(params.into())?;
     let buffer = if opcode == 2 {
-        let bytes = base64::decode(data).map_err(Error::InvalidBase64)?;
+        let bytes = BASE64_STANDARD.decode(data).map_err(Error::InvalidBase64)?;
         Buffer::Bytes(bytes)
     } else {
         Buffer::String(data)
