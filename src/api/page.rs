@@ -451,7 +451,8 @@ impl From<Evt> for Event {
             Evt::Popup(x) => Event::Popup(Page::new(x)),
             Evt::WebSocket(x) => Event::WebSocket(WebSocket::new(x)),
             Evt::Worker(x) => Event::Worker(Worker::new(x)),
-            Evt::Video(x) => Event::Video(Video::new(x))
+            Evt::Video(x) => Event::Video(Video::new(x)),
+            crate::imp::page::Evt::Route(_, _) => unreachable!()
         }
     }
 }
@@ -697,6 +698,74 @@ impl Page {
 
     pub fn hover_builder<'a>(&self, selector: &'a str) -> HoverBuilder<'a> {
         self.main_frame().hover_builder(selector)
+    }
+
+
+    pub async fn route(
+        &self,
+        url: crate::api::route::UrlMatcher,
+        handler: crate::api::route::RouteCallback,
+    ) -> Result<(), Arc<Error>> {
+        let inner = upgrade(&self.inner)?;
+        let is_first = {
+            let mut routes = inner.routes();
+            let is_first = !routes.has_route_listener;
+            routes.has_route_listener = true;
+            routes.routes.push((url, handler));
+            is_first
+        };
+
+        if is_first {
+            let mut rx = inner.subscribe_event();
+            let inner_clone = inner.clone();
+            crate::imp::prelude::spawn(async move {
+                while let Ok(evt) = rx.recv().await {
+                    if let crate::imp::page::Evt::Route(route_weak, req_weak) = evt {
+                        if let (Some(route_imp), Some(req_imp)) = (route_weak.upgrade(), req_weak.upgrade()) {
+                            let url_str = req_imp.url();
+                            let handler = {
+                                let routes = inner_clone.routes();
+                                let mut matched = None;
+                                for (matcher, h) in routes.routes.iter().rev() {
+                                    if matcher.is_match(&url_str) {
+                                        matched = Some(h.clone());
+                                        break;
+                                    }
+                                }
+                                matched
+                            };
+
+                            let api_route = crate::api::route::Route::new(std::sync::Arc::downgrade(&route_imp));
+                            let api_request = crate::api::Request::new(std::sync::Arc::downgrade(&req_imp));
+                            if let Some(h) = handler {
+                                let fut = h(api_route, api_request);
+                                crate::imp::prelude::spawn(async move {
+                                    fut.await;
+                                });
+                            } else {
+                                let _ = api_route.continue_builder().await.r#continue().await;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        inner.update_network_interception_patterns().await?;
+        Ok(())
+    }
+
+    pub async fn unroute(
+        &self,
+        url: &crate::api::route::UrlMatcher,
+    ) -> Result<(), Arc<Error>> {
+        let inner = upgrade(&self.inner)?;
+        {
+            let mut routes = inner.routes();
+            let target_pattern = url.pattern();
+            routes.routes.retain(|(u, _)| u.pattern() != target_pattern);
+        }
+        inner.update_network_interception_patterns().await?;
+        Ok(())
     }
 
     pub fn select_option_builder<'a>(&self, selector: &'a str) -> SelectOptionBuilder<'a> {

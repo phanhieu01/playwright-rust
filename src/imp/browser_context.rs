@@ -13,16 +13,61 @@ pub(crate) struct BrowserContext {
     tx: Mutex<Option<broadcast::Sender<Evt>>>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct Variable {
     browser: Option<Weak<Browser>>,
     pages: Vec<Weak<Page>>,
     timeout: Option<u32>,
     navigation_timeout: Option<u32>,
+    pub(crate) routes: Vec<(crate::api::route::UrlMatcher, crate::api::route::RouteCallback)>,
+    pub(crate) has_route_listener: bool,
 }
+
+impl std::fmt::Debug for Variable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Variable")
+            .field("browser", &self.browser)
+            .field("pages", &self.pages)
+            .field("timeout", &self.timeout)
+            .field("navigation_timeout", &self.navigation_timeout)
+            .field("has_route_listener", &self.has_route_listener)
+            .finish()
+    }
+}
+
 
 impl BrowserContext {
     const DEFAULT_TIMEOUT: u32 = 30000;
+
+
+    pub(crate) fn routes(&self) -> std::sync::MutexGuard<'_, Variable> {
+        self.var.lock().unwrap()
+    }
+
+    pub(crate) async fn update_network_interception_patterns(&self) -> ArcResult<()> {
+        let routes = self.var.lock().unwrap().routes.clone();
+        let mut patterns = Vec::new();
+        for (matcher, _) in routes {
+            let mut pattern = Map::new();
+            match matcher {
+                crate::api::route::UrlMatcher::Glob(ref g, _) => {
+                    pattern.insert("glob".to_string(), g.clone().into());
+                }
+                crate::api::route::UrlMatcher::Regex(ref r) => {
+                    pattern.insert("regexSource".to_string(), r.as_str().into());
+                }
+                crate::api::route::UrlMatcher::Predicate(_) => {
+                    pattern.insert("glob".to_string(), "**/*".into());
+                }
+            }
+            patterns.push(pattern);
+        }
+
+        let mut args = Map::new();
+        args.insert("patterns".to_string(), patterns.into());
+        let _ = send_message!(self, "setNetworkInterceptionPatterns", args);
+        Ok(())
+    }
 
     pub(crate) fn try_new(channel: ChannelOwner) -> Result<Self, Error> {
         let Initializer {} = serde_json::from_value(channel.initializer.clone())?;
@@ -273,6 +318,7 @@ impl RemoteObject for BrowserContext {
 pub(crate) enum Evt {
     Close,
     Page(Weak<Page>),
+    Route(Weak<crate::imp::route::Route>, Weak<crate::imp::request::Request>),
 }
 
 impl EventEmitter for BrowserContext {
@@ -300,6 +346,7 @@ impl IsEvent for Evt {
         match self {
             Self::Close => EventType::Close,
             Self::Page(_) => EventType::Page,
+            Self::Route(_, _) => unreachable!(),
         }
     }
 }

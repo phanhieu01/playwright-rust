@@ -249,7 +249,8 @@ impl From<Evt> for Event {
     fn from(e: Evt) -> Event {
         match e {
             Evt::Close => Event::Close,
-            Evt::Page(w) => Event::Page(Page::new(w))
+            Evt::Page(w) => Event::Page(Page::new(w)),
+            crate::imp::browser_context::Evt::Route(_, _) => unreachable!()
         }
     }
 }

@@ -7,6 +7,56 @@ use crate::{
     },
 };
 
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use regex::Regex;
+use globset::{Glob, GlobMatcher};
+
+pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+
+pub type RouteCallback = Arc<dyn Fn(Route, Request) -> BoxFuture<'static, ()> + Send + Sync>;
+
+#[derive(Clone)]
+pub enum UrlMatcher {
+    Glob(String, GlobMatcher),
+    Regex(Regex),
+    Predicate(Arc<dyn Fn(&str) -> bool + Send + Sync>),
+}
+
+impl std::fmt::Debug for UrlMatcher {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "UrlMatcher({})", self.pattern())
+    }
+}
+
+impl UrlMatcher {
+    pub fn new_glob(pattern: &str) -> Result<Self, globset::Error> {
+        let matcher = Glob::new(pattern)?.compile_matcher();
+        Ok(Self::Glob(pattern.to_string(), matcher))
+    }
+
+    pub fn new_regex(regex: Regex) -> Self {
+        Self::Regex(regex)
+    }
+
+    pub fn is_match(&self, url: &str) -> bool {
+        match self {
+            Self::Glob(_, matcher) => matcher.is_match(url),
+            Self::Regex(regex) => regex.is_match(url),
+            Self::Predicate(pred) => pred(url),
+        }
+    }
+
+    pub fn pattern(&self) -> String {
+        match self {
+            Self::Glob(p, _) => p.clone(),
+            Self::Regex(r) => r.as_str().to_string(),
+            Self::Predicate(_) => "<predicate>".to_string(),
+        }
+    }
+}
+
 /// Whenever a network route is set up with [`method: Page.route`] or [`method: BrowserContext.route`], the `Route` object
 /// allows to handle the route.
 pub struct Route {
@@ -24,7 +74,7 @@ impl PartialEq for Route {
 }
 
 impl Route {
-    fn new(inner: Weak<Impl>) -> Self {
+    pub(crate) fn new(inner: Weak<Impl>) -> Self {
         Self { inner }
     }
 
