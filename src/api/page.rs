@@ -97,6 +97,10 @@ impl Page {
         }
     }
 
+    pub(crate) fn inner(&self) -> &Weak<Impl> {
+        &self.inner
+    }
+
     pub fn context(&self) -> BrowserContext {
         BrowserContext::new(weak_and_then(&self.inner, |rc| rc.browser_context()))
     }

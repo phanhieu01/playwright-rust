@@ -215,7 +215,12 @@ impl BrowserContext {
     subscribe_event! {}
 
     // background_page for chromium
-    // new_cdp_session
+
+    pub async fn new_cdp_session(&self, page: &Page) -> ArcResult<crate::api::cdp_session::CdpSession> {
+        let inner = upgrade(&self.inner)?.new_cdp_session(page.inner()).await?;
+        Ok(crate::api::cdp_session::CdpSession::new(inner))
+    }
+
     // service_workers
 }
 

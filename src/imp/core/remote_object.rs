@@ -153,7 +153,7 @@ mod remote_enum {
     use super::{DummyObject as Dummy, RootObject as Root, *};
     use crate::imp::{
         artifact::Artifact, binding_call::BindingCall, browser::Browser,
-        browser_context::BrowserContext, browser_type::BrowserType,
+        browser_context::BrowserContext, browser_type::BrowserType, cdp_session::CdpSession,
         console_message::ConsoleMessage, dialog::Dialog, element_handle::ElementHandle,
         frame::Frame, js_handle::JsHandle, page::Page, playwright::Playwright, request::Request,
         response::Response, route::Route, selectors::Selectors, stream::Stream,
@@ -245,7 +245,7 @@ mod remote_enum {
         Browser,
         BrowserContext,
         BrowserType,
-        // CdpSession
+        CdpSession,
         ConsoleMessage,
         Dialog,
         // Electron
@@ -278,6 +278,7 @@ mod remote_enum {
                     RemoteArc::BrowserContext(Arc::new(BrowserContext::try_new(c)?))
                 }
                 "BrowserType" => RemoteArc::BrowserType(Arc::new(BrowserType::try_new(c)?)),
+                "CDPSession" => RemoteArc::CdpSession(Arc::new(CdpSession::try_new(c)?)),
                 "ConsoleMessage" => {
                     RemoteArc::ConsoleMessage(Arc::new(ConsoleMessage::try_new(ctx, c)?))
                 }

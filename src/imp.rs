@@ -102,6 +102,7 @@ pub(crate) mod artifact;
 pub(crate) mod binding_call;
 pub(crate) mod browser;
 pub(crate) mod browser_context;
+pub(crate) mod cdp_session;
 pub(crate) mod console_message;
 pub(crate) mod dialog;
 pub(crate) mod download;

@@ -43,6 +43,15 @@ impl Browser {
     // Responds newtype `OwnerPage` of `SinglePageBrowserContext`.
     // There are different behavior in BrowserContext::new_page
     // async fn new_page(
+
+    pub(crate) async fn new_browser_cdp_session(&self) -> ArcResult<Weak<crate::imp::cdp_session::CdpSession>> {
+        let v = send_message!(self, "newBrowserCDPSession", Map::new());
+        let session_guid: crate::imp::core::OnlyGuid = serde_json::from_value(
+            v.get("session").cloned().ok_or(Error::InvalidParams)?
+        ).map_err(Error::Serde)?;
+        let arc = get_object!(self.context()?.lock().unwrap(), &session_guid.guid, CdpSession)?;
+        Ok(arc)
+    }
 }
 
 // mutable

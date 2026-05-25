@@ -209,6 +209,18 @@ impl BrowserContext {
     //    let _ = send_message!(self, "pause", Map::new());
     //    Ok(())
     //}
+
+    pub(crate) async fn new_cdp_session(&self, page: &Weak<Page>) -> ArcResult<Weak<crate::imp::cdp_session::CdpSession>> {
+        let page_guid = upgrade(page)?.guid().to_owned();
+        let mut params = Map::new();
+        params.insert("page".into(), serde_json::to_value(crate::imp::core::OnlyGuid { guid: page_guid }).map_err(Error::Serde)?);
+        let v = send_message!(self, "newCDPSession", params);
+        let session_guid: crate::imp::core::OnlyGuid = serde_json::from_value(
+            v.get("session").cloned().ok_or(Error::InvalidParams)?
+        ).map_err(Error::Serde)?;
+        let arc = get_object!(self.context()?.lock().unwrap(), &session_guid.guid, CdpSession)?;
+        Ok(arc)
+    }
 }
 
 // mutable

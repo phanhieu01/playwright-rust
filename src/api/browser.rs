@@ -71,7 +71,11 @@ impl Browser {
         inner.close().await
     }
 
-    // new_browser_cdp_session
+    pub async fn new_browser_cdp_session(&self) -> ArcResult<crate::api::cdp_session::CdpSession> {
+        let inner = upgrade(&self.inner)?.new_browser_cdp_session().await?;
+        Ok(crate::api::cdp_session::CdpSession::new(inner))
+    }
+
     // start_tracing
     // stop_tracing
 }
