@@ -15,6 +15,7 @@ build = "src/build.rs"
 
 [build-dependencies]
 reqwest = { version = "0.12.23", features = ["blocking"] }
+zip = { version = "2.2.0" }
 
 [dependencies]
 log = "0.4.29"
