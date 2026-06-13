@@ -20,6 +20,15 @@ const PROBE: &str = r#"() => {
     outerW: window.outerWidth, outerH: window.outerHeight,
     windowFitsScreen: window.outerWidth <= screen.availWidth && window.outerHeight <= screen.availHeight,
   };
+  // matchMedia device-width should equal screen.width; if it reveals a DIFFERENT
+  // real resolution, screen.* spoof is leaking via CSS media features.
+  out.mediaQuery = {
+    deviceWidthMatchesScreen: matchMedia('(device-width: ' + screen.width + 'px)').matches,
+    dw1920: matchMedia('(device-width: 1920px)').matches,
+    dw1280: matchMedia('(device-width: 1280px)').matches,
+    widthViewport1280: matchMedia('(width: 1280px)').matches,
+    resolutionDpr: matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)').matches,
+  };
   // WebGL: renderer string is spoofed by m3, but the numeric caps / extension list
   // come from the host GPU/driver and may betray Windows/D3D11 under a Mac profile.
   try {
