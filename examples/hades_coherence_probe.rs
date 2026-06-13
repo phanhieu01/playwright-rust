@@ -25,6 +25,8 @@ const PROBE: &str = r#"() => {
       maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
       maxViewportDims: Array.from(gl.getParameter(gl.MAX_VIEWPORT_DIMS) || []),
       maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+      aliasedPointSizeRange: Array.from(gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) || []),
+      aliasedLineWidthRange: Array.from(gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE) || []),
       shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
       glVersion: gl.getParameter(gl.VERSION),
       extCount: (gl.getSupportedExtensions() || []).length,
