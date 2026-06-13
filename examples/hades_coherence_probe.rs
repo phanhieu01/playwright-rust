@@ -12,6 +12,14 @@ const PROBE: &str = r#"() => {
   out.platform = navigator.platform;
   out.uaPlatform = navigator.userAgentData ? navigator.userAgentData.platform : null;
   out.ua = navigator.userAgent;
+  out.screen = {
+    width: screen.width, height: screen.height,
+    availWidth: screen.availWidth, availHeight: screen.availHeight,
+    dpr: window.devicePixelRatio,
+    innerW: window.innerWidth, innerH: window.innerHeight,
+    outerW: window.outerWidth, outerH: window.outerHeight,
+    windowFitsScreen: window.outerWidth <= screen.availWidth && window.outerHeight <= screen.availHeight,
+  };
   // WebGL: renderer string is spoofed by m3, but the numeric caps / extension list
   // come from the host GPU/driver and may betray Windows/D3D11 under a Mac profile.
   try {
