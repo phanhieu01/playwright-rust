@@ -45,6 +45,7 @@ globset = "0.4.18"
 env_logger = "0.11.8"
 tempdir = "0.3.7"
 tide = "0.16.0"
+humanize-engine = { path = "../hadesbrowser/tools/humanize-engine" }
 warp = "0.3"
 
 [features]

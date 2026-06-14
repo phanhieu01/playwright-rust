@@ -41,9 +41,10 @@ async fn main() -> Result<(), playwright::Error> {
               const ctx = [];
               all.forEach((l,i) => { if (/\blie(s)?\b|lied|forced|\bprototype\b/i.test(l)) ctx.push(all.slice(i, i+4).join(' | ')); });
               return {
-                verdict: grep(/trust|lies|\bgrade\b|score|bot|%/i).slice(0,25),
-                fontHints: grep(/segoe|san francisco|helvetica|apple-system|platform hints/i).slice(0,10),
-                osLeakWindows: grep(/windows|win32|direct3d|d3d11|microsoft/i).slice(0,15),
+                verdict: grep(/trust|lies|\bgrade\b|stealth|headless|%/i).slice(0,12),
+                screen: grep(/resolution|screen|viewport|\bscreenframe\b|inner|outer|\d{3,4}\s*[x×]\s*\d{3,4}/i).slice(0,18),
+                fontHints: grep(/segoe|san francisco|helvetica|apple-system|platform hints/i).slice(0,8),
+                osLeakWindows: grep(/windows|win32|direct3d|d3d11|microsoft/i).slice(0,12),
               };
             }"#,
         )
