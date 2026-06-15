@@ -3,6 +3,43 @@
 Goal: when `playwright-rust` drives the Hades anti-detect browser, leave no automation residue that a
 detector page can see. Drafted for a fresh session to pick up and execute.
 
+## 0. Implemented — Camoufox-style pipe transport + Sandbox World launch (2026-06-15)
+
+Drive Hades the way Camoufox drives Firefox: control channel over an **inherited pipe** (no TCP debug
+port, no `/json` endpoints), agent pinned to an **isolated "Sandbox World"** the page's main world
+can't observe.
+
+- **Example: `examples/hades_launch_pipe.rs`.** Consumes the launcher contract
+  `hades launch-spec <id> --json` → `{ executablePath, userDataDir, args }` and launches via
+  `chromium.persistent_context_launcher(userDataDir).executable(...).args(...)`. Playwright's
+  persistent launch uses `--remote-debugging-pipe` by default ⇒ **no listening port**. Loads the real
+  profile (user-data-dir + `--hades-config-file` + proxy), unlike the ephemeral `launcher()` probes.
+- **Sandbox World** = the example sets `REBROWSER_PATCHES_RUNTIME_FIX_MODE=alwaysIsolated` *before*
+  `Playwright::initialize()` (the Node driver inherits the env), forcing every evaluate into the
+  utility/isolated world. The rebrowser driver-patch (`driver-patch/1.57.0/`) implements it.
+- **Launcher side (hadesbrowser repo):** `hades-launcher` no longer opens `--remote-debugging-port` by
+  default — port-less pipe is the default; `hades launch --debug-port` is an opt-in legacy fallback.
+  New `hades launch-spec` command emits the JSON contract above.
+- **Binary-level Sandbox World (m8, hadesbrowser repo):** new patch
+  `patches/hades/m8-sandbox-world/inspector-page-agent-sandbox-world.patch` —
+  `InspectorPageAgent::addScriptToEvaluateOnNewDocument` reroutes CDP init scripts that target the
+  MAIN world into the reserved isolated world `"util"` when the profile has `"sandboxWorld": true`.
+  Driver-independent: even stock Playwright can't land an init script in the page's main world. The
+  driver should pin `REBROWSER_PATCHES_UTILITY_WORLD_NAME=util` (the examples do) so init-script state
+  and evaluate() share one world. New profile field `sandboxWorld` (hades-profile schema, default
+  false). Example: `examples/hades_sandbox_probe.rs`.
+- **Verified (2026-06-15):** launcher unit tests 6/6, hades-profile 15/15; real `chrome.exe`: default
+  launch → no listener in 9300–9899, `--debug-port` → port opens; `hades_launch_pipe` against
+  `about:blank` boots over pipe, agent isolated, exit 0. **Binary Sandbox World A/B proven** with
+  `hades_sandbox_probe` under stock Playwright (`RUNTIME_FIX_MODE=0`): sandboxWorld OFF → init script
+  leaks to main world (`probe:string`); ON → main world clean (`probe:undefined`). Chromium rebuilt
+  clean (406/406, LINK chrome.exe).
+- **TODO (live):** run `hades_launch_pipe` against `https://bot-detector.rebrowser.net/` and CreepJS to
+  confirm `mainWorldExecution` / `runtimeEnableLeak` green with the real profile.
+
+The sections below are the original residue-stripping plan (rebrowser integration), still the canonical
+in-page hardening and now wired via `driver-patch/`.
+
 ## 1. Architecture (verified — read this first)
 
 `playwright-rust` is **NOT** a from-scratch CDP client. It is a typed Rust client over the **official
